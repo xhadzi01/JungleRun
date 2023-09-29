@@ -42,8 +42,5 @@ func (res *ImageResource) BoundY() int {
 
 type FontResource struct {
 	font.Face
-}
-
-func (fnt FontResource) Font() font.Face {
-	return fnt.Face
+	Size int
 }

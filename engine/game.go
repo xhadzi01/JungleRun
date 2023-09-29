@@ -24,9 +24,6 @@ const (
 	screenWidth      = 640
 	screenHeight     = 480
 	tileSize         = 32
-	titleFontSize    = fontSize * 1.5
-	fontSize         = 24
-	smallFontSize    = fontSize / 2
 	pipeWidth        = tileSize * 2
 	pipeStartOffsetX = 8
 	pipeIntervalX    = 8
@@ -216,12 +213,12 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		texts = []string{"", "GAME OVER!"}
 	}
 	for i, l := range titleTexts {
-		x := (g.screen.Width() - len(l)*titleFontSize) / 2
-		text.Draw(screen, l, resources.TitleArcadeFont, x, (i+4)*titleFontSize, color.White)
+		x := (g.screen.Width() - len(l)*resources.TitleArcadeFont.Size) / 2
+		text.Draw(screen, l, resources.TitleArcadeFont, x, (i+4)*resources.TitleArcadeFont.Size, color.White)
 	}
 	for i, l := range texts {
-		x := (g.screen.Width() - len(l)*fontSize) / 2
-		text.Draw(screen, l, resources.ArcadeFont, x, (i+4)*fontSize, color.White)
+		x := (g.screen.Width() - len(l)*resources.ArcadeFont.Size) / 2
+		text.Draw(screen, l, resources.ArcadeFont, x, (i+4)*resources.ArcadeFont.Size, color.White)
 	}
 
 	if g.mode == ModeTitle {
@@ -230,13 +227,13 @@ func (g *Game) Draw(screen *ebiten.Image) {
 			"licenced under CC BY 3.0.",
 		}
 		for i, l := range msg {
-			x := (g.screen.Width() - len(l)*smallFontSize) / 2
-			text.Draw(screen, l, resources.SmallArcadeFont, x, g.screen.Height()-4+(i-1)*smallFontSize, color.White)
+			x := (g.screen.Width() - len(l)*resources.SmallArcadeFont.Size) / 2
+			text.Draw(screen, l, resources.SmallArcadeFont, x, g.screen.Height()-4+(i-1)*resources.SmallArcadeFont.Size, color.White)
 		}
 	}
 
 	scoreStr := fmt.Sprintf("%04d", g.score())
-	text.Draw(screen, scoreStr, resources.ArcadeFont, g.screen.Width()-len(scoreStr)*fontSize, fontSize, color.White)
+	text.Draw(screen, scoreStr, resources.ArcadeFont, g.screen.Width()-len(scoreStr)*resources.ArcadeFont.Size, resources.ArcadeFont.Size, color.White)
 	ebitenutil.DebugPrint(screen, fmt.Sprintf("TPS: %0.2f", ebiten.ActualTPS()))
 }
 

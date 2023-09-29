@@ -76,6 +76,7 @@ func loadFontResource(fontType *sfnt.Font, fontSize float64) (res FontResource, 
 	} else {
 		res = FontResource{
 			Face: titleFont,
+			Size: int(fontSize),
 		}
 	}
 	return
