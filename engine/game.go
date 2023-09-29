@@ -16,11 +16,8 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/audio/wav"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	raudio "github.com/hajimehoshi/ebiten/v2/examples/resources/audio"
-	"github.com/hajimehoshi/ebiten/v2/examples/resources/fonts"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
 	"github.com/hajimehoshi/ebiten/v2/text"
-	"golang.org/x/image/font"
-	"golang.org/x/image/font/opentype"
 )
 
 const (
@@ -35,44 +32,6 @@ const (
 	pipeIntervalX    = 8
 	pipeGapY         = 5
 )
-
-var (
-	titleArcadeFont font.Face
-	arcadeFont      font.Face
-	smallArcadeFont font.Face
-)
-
-func init() {
-	tt, err := opentype.Parse(fonts.PressStart2P_ttf)
-	if err != nil {
-		log.Fatal(err)
-	}
-	const dpi = 72
-	titleArcadeFont, err = opentype.NewFace(tt, &opentype.FaceOptions{
-		Size:    titleFontSize,
-		DPI:     dpi,
-		Hinting: font.HintingFull,
-	})
-	if err != nil {
-		log.Fatal(err)
-	}
-	arcadeFont, err = opentype.NewFace(tt, &opentype.FaceOptions{
-		Size:    fontSize,
-		DPI:     dpi,
-		Hinting: font.HintingFull,
-	})
-	if err != nil {
-		log.Fatal(err)
-	}
-	smallArcadeFont, err = opentype.NewFace(tt, &opentype.FaceOptions{
-		Size:    smallFontSize,
-		DPI:     dpi,
-		Hinting: font.HintingFull,
-	})
-	if err != nil {
-		log.Fatal(err)
-	}
-}
 
 type Mode int
 
@@ -258,11 +217,11 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	}
 	for i, l := range titleTexts {
 		x := (g.screen.Width() - len(l)*titleFontSize) / 2
-		text.Draw(screen, l, titleArcadeFont, x, (i+4)*titleFontSize, color.White)
+		text.Draw(screen, l, resources.TitleArcadeFont, x, (i+4)*titleFontSize, color.White)
 	}
 	for i, l := range texts {
 		x := (g.screen.Width() - len(l)*fontSize) / 2
-		text.Draw(screen, l, arcadeFont, x, (i+4)*fontSize, color.White)
+		text.Draw(screen, l, resources.ArcadeFont, x, (i+4)*fontSize, color.White)
 	}
 
 	if g.mode == ModeTitle {
@@ -272,12 +231,12 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		}
 		for i, l := range msg {
 			x := (g.screen.Width() - len(l)*smallFontSize) / 2
-			text.Draw(screen, l, smallArcadeFont, x, g.screen.Height()-4+(i-1)*smallFontSize, color.White)
+			text.Draw(screen, l, resources.SmallArcadeFont, x, g.screen.Height()-4+(i-1)*smallFontSize, color.White)
 		}
 	}
 
 	scoreStr := fmt.Sprintf("%04d", g.score())
-	text.Draw(screen, scoreStr, arcadeFont, g.screen.Width()-len(scoreStr)*fontSize, fontSize, color.White)
+	text.Draw(screen, scoreStr, resources.ArcadeFont, g.screen.Width()-len(scoreStr)*fontSize, fontSize, color.White)
 	ebitenutil.DebugPrint(screen, fmt.Sprintf("TPS: %0.2f", ebiten.ActualTPS()))
 }
 
@@ -308,7 +267,7 @@ func (g *Game) hit() bool {
 		PlayerImageWidth  = 30
 		playerImageHeight = 60
 	)
-	w, h := resources.PlayerImage.Bounds().Dx(), resources.PlayerImage.Bounds().Dy()
+	w, h := resources.PlayerImage.BoundX(), resources.PlayerImage.BoundY()
 	x0 := floorDiv(g.x16, 16) + (w-PlayerImageWidth)/2
 	y0 := floorDiv(g.y16, 16) + (h-playerImageHeight)/2
 	x1 := x0 + PlayerImageWidth
@@ -392,11 +351,11 @@ func (g *Game) drawTiles(screen *ebiten.Image) {
 
 func (g *Game) drawPlayer(screen *ebiten.Image) {
 	op := &ebiten.DrawImageOptions{}
-	w, h := resources.PlayerImage.Bounds().Dx(), resources.PlayerImage.Bounds().Dy()
+	w, h := resources.PlayerImage.BoundX(), resources.PlayerImage.BoundY()
 	op.GeoM.Translate(-float64(w)/2.0, -float64(h)/2.0)
 	op.GeoM.Rotate(float64(g.vy16) / 96.0 * math.Pi / 6)
 	op.GeoM.Translate(float64(w)/2.0, float64(h)/2.0)
 	op.GeoM.Translate(float64(g.x16/16.0)-float64(g.cameraX), float64(g.y16/16.0)-float64(g.cameraY))
 	op.Filter = ebiten.FilterLinear
-	screen.DrawImage(resources.PlayerImage, op)
+	screen.DrawImage(resources.PlayerImage.Image, op)
 }
