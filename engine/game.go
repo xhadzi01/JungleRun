@@ -2,20 +2,14 @@ package engine
 
 import (
 	"JungleRun/resources"
-	"bytes"
 	"fmt"
 	"image"
 	"image/color"
-	"log"
 	"math"
 	"math/rand"
 
 	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/audio"
-	"github.com/hajimehoshi/ebiten/v2/audio/vorbis"
-	"github.com/hajimehoshi/ebiten/v2/audio/wav"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
-	raudio "github.com/hajimehoshi/ebiten/v2/examples/resources/audio"
 	"github.com/hajimehoshi/ebiten/v2/text"
 )
 
@@ -55,10 +49,6 @@ type Game struct {
 	pipeTileYs []int
 
 	gameoverCount int
-
-	audioContext *audio.Context
-	jumpPlayer   *audio.Player
-	hitPlayer    *audio.Player
 }
 
 func NewGame(screen *Screen) ebiten.Game {
@@ -79,28 +69,6 @@ func (g *Game) init() {
 	g.pipeTileYs = make([]int, 256)
 	for i := range g.pipeTileYs {
 		g.pipeTileYs[i] = rand.Intn(6) + 2
-	}
-
-	if g.audioContext == nil {
-		g.audioContext = audio.NewContext(48000)
-	}
-
-	jumpD, err := vorbis.DecodeWithoutResampling(bytes.NewReader(raudio.Jump_ogg))
-	if err != nil {
-		log.Fatal(err)
-	}
-	g.jumpPlayer, err = g.audioContext.NewPlayer(jumpD)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	jabD, err := wav.DecodeWithoutResampling(bytes.NewReader(raudio.Jab_wav))
-	if err != nil {
-		log.Fatal(err)
-	}
-	g.hitPlayer, err = g.audioContext.NewPlayer(jabD)
-	if err != nil {
-		log.Fatal(err)
 	}
 }
 
@@ -129,10 +97,9 @@ func (g *Game) UpdateGame() (err error) {
 	g.cameraX += 2
 	if g.isKeyJustPressed() {
 		g.vy16 = -96
-		if err = g.jumpPlayer.Rewind(); err != nil {
+		if err = resources.JumpAudio.PlayFromStart(); err != nil {
 			return
 		}
-		g.jumpPlayer.Play()
 	}
 	g.y16 += g.vy16
 
@@ -143,10 +110,9 @@ func (g *Game) UpdateGame() (err error) {
 	}
 
 	if g.hit() {
-		if err = g.hitPlayer.Rewind(); err != nil {
-			return err
+		if err = resources.HitAudio.PlayFromStart(); err != nil {
+			return
 		}
-		g.hitPlayer.Play()
 		g.mode = ModeGameOver
 		g.gameoverCount = 30
 	}

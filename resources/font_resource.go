@@ -1,4 +1,4 @@
-// Copyright 2022 by xhadzi
+// Copyright 2023 by xhadzi
 // This game demo uses Floppy game example from ebiten repository.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,31 +16,34 @@
 package resources
 
 import (
-	"github.com/hajimehoshi/ebiten/v2"
+	"errors"
+
 	"golang.org/x/image/font"
+	"golang.org/x/image/font/opentype"
+	"golang.org/x/image/font/sfnt"
 )
-
-type ImageResource struct {
-	*ebiten.Image
-}
-
-func (res *ImageResource) BoundX() int {
-	if res == nil {
-		panic("invalid resource reference when retrieving X bound")
-	}
-
-	return res.Bounds().Dx()
-}
-
-func (res *ImageResource) BoundY() int {
-	if res == nil {
-		panic("invalid resource reference when retrieving Y bound")
-	}
-
-	return res.Bounds().Dy()
-}
 
 type FontResource struct {
 	font.Face
 	Size int
+}
+
+func NewFontResource(fontType *sfnt.Font, fontSize float64) (res FontResource, err error) {
+	const dpi = 72
+
+	faceOptions := &opentype.FaceOptions{
+		Size:    fontSize,
+		DPI:     dpi,
+		Hinting: font.HintingFull,
+	}
+
+	if titleFont, errFace := opentype.NewFace(fontType, faceOptions); errFace != nil {
+		err = errors.New("could not load font resource, reason: " + errFace.Error())
+	} else {
+		res = FontResource{
+			Face: titleFont,
+			Size: int(fontSize),
+		}
+	}
+	return
 }
