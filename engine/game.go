@@ -16,7 +16,6 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/audio/wav"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	raudio "github.com/hajimehoshi/ebiten/v2/examples/resources/audio"
-	"github.com/hajimehoshi/ebiten/v2/inpututil"
 	"github.com/hajimehoshi/ebiten/v2/text"
 )
 
@@ -32,18 +31,6 @@ const (
 
 type Mode int
 
-func floorDiv(x, y int) int {
-	d := x / y
-	if d*y == x || x >= 0 {
-		return d
-	}
-	return d - 1
-}
-
-func floorMod(x, y int) int {
-	return x - floorDiv(x, y)*y
-}
-
 const (
 	ModeTitle Mode = iota
 	ModeGame
@@ -51,8 +38,9 @@ const (
 )
 
 type Game struct {
-	screen *Screen
-	mode   Mode
+	screen    *Screen
+	controlls GameControlls
+	mode      Mode
 
 	// The players's position
 	x16  int
@@ -68,9 +56,6 @@ type Game struct {
 
 	gameoverCount int
 
-	touchIDs   []ebiten.TouchID
-	gamepadIDs []ebiten.GamepadID
-
 	audioContext *audio.Context
 	jumpPlayer   *audio.Player
 	hitPlayer    *audio.Player
@@ -78,14 +63,17 @@ type Game struct {
 
 func NewGame(screen *Screen) ebiten.Game {
 	g := &Game{
-		screen: screen,
+		screen:    screen,
+		controlls: NewGameControlls(),
 	}
 	g.init()
 	return g
 }
+
 func (g *Game) init() {
+	// initial position
 	g.x16 = 0
-	g.y16 = 100 * 16
+	g.y16 = g.screen.screenHeight / 4 * 16
 	g.cameraX = -240
 	g.cameraY = 0
 	g.pipeTileYs = make([]int, 256)
@@ -117,34 +105,10 @@ func (g *Game) init() {
 }
 
 func (g *Game) isKeyJustPressed() bool {
-	if inpututil.IsKeyJustPressed(ebiten.KeySpace) {
+	if len(g.controlls.GetPressedKeys()) > 0 {
 		return true
-	}
-	if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) {
+	} else if len(g.controlls.GetPressedMouseKeys()) > 0 {
 		return true
-	}
-	g.touchIDs = inpututil.AppendJustPressedTouchIDs(g.touchIDs[:0])
-	if len(g.touchIDs) > 0 {
-		return true
-	}
-	g.gamepadIDs = ebiten.AppendGamepadIDs(g.gamepadIDs[:0])
-	for _, g := range g.gamepadIDs {
-		if ebiten.IsStandardGamepadLayoutAvailable(g) {
-			if inpututil.IsStandardGamepadButtonJustPressed(g, ebiten.StandardGamepadButtonRightBottom) {
-				return true
-			}
-			if inpututil.IsStandardGamepadButtonJustPressed(g, ebiten.StandardGamepadButtonRightRight) {
-				return true
-			}
-		} else {
-			// The button 0/1 might not be A/B buttons.
-			if inpututil.IsGamepadButtonJustPressed(g, ebiten.GamepadButton0) {
-				return true
-			}
-			if inpututil.IsGamepadButtonJustPressed(g, ebiten.GamepadButton1) {
-				return true
-			}
-		}
 	}
 	return false
 }
@@ -153,46 +117,64 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
 	return g.screen.Width(), g.screen.Height()
 }
 
+func (g *Game) UpdateTitle() (err error) {
+	if g.isKeyJustPressed() {
+		g.mode = ModeGame
+	}
+	return
+}
+
+func (g *Game) UpdateGame() (err error) {
+	g.x16 += 32
+	g.cameraX += 2
+	if g.isKeyJustPressed() {
+		g.vy16 = -96
+		if err = g.jumpPlayer.Rewind(); err != nil {
+			return
+		}
+		g.jumpPlayer.Play()
+	}
+	g.y16 += g.vy16
+
+	// Gravity
+	g.vy16 += 4
+	if g.vy16 > 96 {
+		g.vy16 = 96
+	}
+
+	if g.hit() {
+		if err = g.hitPlayer.Rewind(); err != nil {
+			return err
+		}
+		g.hitPlayer.Play()
+		g.mode = ModeGameOver
+		g.gameoverCount = 30
+	}
+	return
+}
+
+func (g *Game) UpdateOnGameOver() (err error) {
+	// delay initiation of the new game for a while so that it does not register
+	// last held key during cras as a signal for a new game
+	if g.gameoverCount > 0 {
+		g.gameoverCount--
+	}
+
+	if g.gameoverCount == 0 && g.isKeyJustPressed() {
+		g.init()
+		g.mode = ModeTitle
+	}
+	return
+}
+
 func (g *Game) Update() error {
 	switch g.mode {
 	case ModeTitle:
-		if g.isKeyJustPressed() {
-			g.mode = ModeGame
-		}
+		return g.UpdateTitle()
 	case ModeGame:
-		g.x16 += 32
-		g.cameraX += 2
-		if g.isKeyJustPressed() {
-			g.vy16 = -96
-			if err := g.jumpPlayer.Rewind(); err != nil {
-				return err
-			}
-			g.jumpPlayer.Play()
-		}
-		g.y16 += g.vy16
-
-		// Gravity
-		g.vy16 += 4
-		if g.vy16 > 96 {
-			g.vy16 = 96
-		}
-
-		if g.hit() {
-			if err := g.hitPlayer.Rewind(); err != nil {
-				return err
-			}
-			g.hitPlayer.Play()
-			g.mode = ModeGameOver
-			g.gameoverCount = 30
-		}
+		return g.UpdateGame()
 	case ModeGameOver:
-		if g.gameoverCount > 0 {
-			g.gameoverCount--
-		}
-		if g.gameoverCount == 0 && g.isKeyJustPressed() {
-			g.init()
-			g.mode = ModeTitle
-		}
+		return g.UpdateOnGameOver()
 	}
 	return nil
 }
@@ -234,6 +216,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 
 	scoreStr := fmt.Sprintf("%04d", g.score())
 	text.Draw(screen, scoreStr, resources.ArcadeFont, g.screen.Width()-len(scoreStr)*resources.ArcadeFont.Size, resources.ArcadeFont.Size, color.White)
+
 	ebitenutil.DebugPrint(screen, fmt.Sprintf("TPS: %0.2f", ebiten.ActualTPS()))
 }
 
