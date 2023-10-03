@@ -12,12 +12,6 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/text"
 )
 
-type ObjectsPosition struct {
-	x16  int
-	y16  int
-	vy16 int
-}
-
 type CameraPosition struct {
 	cameraX int
 	cameraY int
@@ -75,7 +69,7 @@ func (gc *GameContent) DrawBackgroundColor(screenImage *ebiten.Image) {
 	screenImage.Fill(gc.backgroundColor)
 }
 
-func (gc *GameContent) DrawObject(screenImage *ebiten.Image, objectImage resources.ImageResource, objPos ObjectsPosition, camPos CameraPosition) {
+func (gc *GameContent) DrawObject(screenImage *ebiten.Image, objectImage resources.ImageResource, objPos ObjectPosition, camPos CameraPosition) {
 	if gc == nil {
 		panic("screen reference is invalid")
 	}
@@ -87,9 +81,9 @@ func (gc *GameContent) DrawObject(screenImage *ebiten.Image, objectImage resourc
 
 	op := &ebiten.DrawImageOptions{}
 	op.GeoM.Translate(-float64(imageWidth)/2.0, -float64(imageHeight)/2.0)
-	op.GeoM.Rotate(float64(objPos.vy16) / 96.0 * math.Pi / 6)
+	op.GeoM.Rotate(float64(objPos.gravity) / 600.0 * math.Pi / 6)
 	op.GeoM.Translate(float64(imageWidth)/2.0, float64(imageHeight)/2.0)
-	op.GeoM.Translate(float64(objPos.x16/16.0)-float64(camPos.cameraX), float64(objPos.y16/16.0)-float64(camPos.cameraY))
+	op.GeoM.Translate(float64(objPos.xPos/100.0)-float64(camPos.cameraX), float64(objPos.yPos/100.0)-float64(camPos.cameraY))
 	op.Filter = ebiten.FilterLinear
 	screenImage.DrawImage(objectImage.Image, op)
 }

@@ -33,9 +33,7 @@ type Game struct {
 	mode      Mode
 
 	// The players's position
-	x16  int
-	y16  int
-	vy16 int
+	objPos ObjectPosition
 
 	// Camera
 	cameraX int
@@ -59,8 +57,10 @@ func NewGame(screen *Screen) ebiten.Game {
 
 func (g *Game) init() {
 	// initial position
-	g.x16 = 0
-	g.y16 = g.screen.screenHeight / 4 * 16
+	g.objPos.xPos = 0
+	g.objPos.yPos = Position(g.screen.screenHeight / 4 * 100)
+	g.objPos.gravity = 0
+
 	g.cameraX = -240
 	g.cameraY = 0
 	g.pipeTileYs = make([]int, 256)
@@ -90,20 +90,21 @@ func (g *Game) UpdateTitle() (err error) {
 }
 
 func (g *Game) UpdateGame() (err error) {
-	g.x16 += 32
+	g.objPos.xPos += 200
+
 	g.cameraX += 2
 	if g.isKeyJustPressed() {
-		g.vy16 = -96
+		g.objPos.gravity = -600
 		if err = resources.JumpAudio.PlayFromStart(); err != nil {
 			return
 		}
 	}
-	g.y16 += g.vy16
+	g.objPos.yPos += g.objPos.gravity
 
 	// Gravity
-	g.vy16 += 4
-	if g.vy16 > 96 {
-		g.vy16 = 96
+	g.objPos.gravity += 25
+	if g.objPos.gravity > 600 {
+		g.objPos.gravity = 600
 	}
 
 	if g.hit() {
@@ -173,7 +174,7 @@ func (g *Game) pipeAt(tileX int) (tileY int, ok bool) {
 }
 
 func (g *Game) score() int {
-	x := floorDiv(g.x16, 16) / tileSize
+	x := g.objPos.xPos.ValueFloored() / tileSize
 	if (x - pipeStartOffsetX) <= 0 {
 		return 0
 	}
@@ -189,8 +190,8 @@ func (g *Game) hit() bool {
 		playerImageHeight = 60
 	)
 	w, h := resources.PlayerImage.BoundX(), resources.PlayerImage.BoundY()
-	x0 := floorDiv(g.x16, 16) + (w-PlayerImageWidth)/2
-	y0 := floorDiv(g.y16, 16) + (h-playerImageHeight)/2
+	x0 := g.objPos.xPos.ValueFloored() + (w-PlayerImageWidth)/2
+	y0 := g.objPos.yPos.ValueFloored() + (h-playerImageHeight)/2
 	x1 := x0 + PlayerImageWidth
 	y1 := y0 + playerImageHeight
 	if y0 < -tileSize*4 {
@@ -271,5 +272,5 @@ func (g *Game) drawTiles(screen *ebiten.Image) {
 }
 
 func (g *Game) drawPlayer(screen *ebiten.Image) {
-	g.content.DrawObject(screen, resources.PlayerImage, ObjectsPosition{x16: g.x16, y16: g.y16, vy16: g.vy16}, CameraPosition{cameraX: g.cameraX, cameraY: g.cameraY})
+	g.content.DrawObject(screen, resources.PlayerImage, ObjectPosition{xPos: g.objPos.xPos, yPos: g.objPos.yPos, gravity: g.objPos.gravity}, CameraPosition{cameraX: g.cameraX, cameraY: g.cameraY})
 }
