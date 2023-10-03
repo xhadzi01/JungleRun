@@ -81,9 +81,9 @@ func (gc *GameContent) DrawObject(screenImage *ebiten.Image, objectImage resourc
 
 	op := &ebiten.DrawImageOptions{}
 	op.GeoM.Translate(-float64(imageWidth)/2.0, -float64(imageHeight)/2.0)
-	op.GeoM.Rotate(float64(objPos.gravity) / 600.0 * math.Pi / 6)
+	op.GeoM.Rotate(objPos.gravity.Value() / 6.0 * math.Pi / 6)
 	op.GeoM.Translate(float64(imageWidth)/2.0, float64(imageHeight)/2.0)
-	op.GeoM.Translate(float64(objPos.xPos/100.0)-float64(camPos.cameraX), float64(objPos.yPos/100.0)-float64(camPos.cameraY))
+	op.GeoM.Translate(objPos.xPos.Value()-float64(camPos.cameraX), objPos.yPos.Value()-float64(camPos.cameraY))
 	op.Filter = ebiten.FilterLinear
 	screenImage.DrawImage(objectImage.Image, op)
 }
