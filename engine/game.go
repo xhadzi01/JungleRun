@@ -8,7 +8,6 @@ import (
 	"math/rand"
 
 	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/text"
 )
 
 const (
@@ -148,29 +147,16 @@ func (g *Game) Update() error {
 func (g *Game) Draw(screen *ebiten.Image) {
 	screen.Fill(color.RGBA{0x80, 0xa0, 0xc0, 0xff})
 	g.drawTiles(screen)
+
 	if g.mode != ModeTitle {
 		g.drawPlayer(screen)
 	}
-	var titleTexts []string
-	var texts []string
-	switch g.mode {
-	case ModeTitle:
-		titleTexts = []string{"Jungle run"}
-		texts = []string{"", "", "", "", "", "", "", "PRESS SPACE KEY", "", "OR A/B BUTTON", "", "OR TOUCH SCREEN"}
-	case ModeGameOver:
-		texts = []string{"", "GAME OVER!"}
-	}
-	for i, l := range titleTexts {
-		x := (g.screen.Width() - len(l)*resources.TitleArcadeFont.Size) / 2
-		text.Draw(screen, l, resources.TitleArcadeFont, x, (i+4)*resources.TitleArcadeFont.Size, color.White)
-	}
-	for i, l := range texts {
-		x := (g.screen.Width() - len(l)*resources.ArcadeFont.Size) / 2
-		text.Draw(screen, l, resources.ArcadeFont, x, (i+4)*resources.ArcadeFont.Size, color.White)
-	}
 
 	if g.mode == ModeTitle {
+		g.content.DrawCenterText(screen, "Jungle run", []string{"PRESS SPACE KEY", "OR A/B BUTTON", "OR TOUCH SCREEN"})
 		g.content.DrawNameAndCopyright(screen, "Go Jungle run", "licenced under CC BY 3.0.")
+	} else if g.mode == ModeGameOver {
+		g.content.DrawCenterText(screen, "", []string{"GAME OVER!"})
 	}
 
 	g.content.DrawScore(screen, g.score())
