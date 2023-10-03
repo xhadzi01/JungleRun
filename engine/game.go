@@ -58,7 +58,7 @@ func NewGame(screen *Screen) ebiten.Game {
 func (g *Game) init() {
 	// initial position
 	g.objPos.xPos = 0
-	g.objPos.yPos = Position(g.screen.screenHeight / 4 * 100)
+	g.objPos.yPos.Add(float64(g.screen.screenHeight) / 4.0)
 	g.objPos.gravity = 0
 
 	g.cameraX = -240
@@ -90,21 +90,21 @@ func (g *Game) UpdateTitle() (err error) {
 }
 
 func (g *Game) UpdateGame() (err error) {
-	g.objPos.xPos += 200
+	g.objPos.xPos.Add(2)
 
 	g.cameraX += 2
 	if g.isKeyJustPressed() {
-		g.objPos.gravity = -600
+		g.objPos.gravity.Reset(-6.0)
 		if err = resources.JumpAudio.PlayFromStart(); err != nil {
 			return
 		}
 	}
-	g.objPos.yPos += g.objPos.gravity
+	g.objPos.yPos.Add(g.objPos.gravity.Value())
 
 	// Gravity
-	g.objPos.gravity += 25
-	if g.objPos.gravity > 600 {
-		g.objPos.gravity = 600
+	g.objPos.gravity.Add(0.25)
+	if g.objPos.gravity.Value() > 6 {
+		g.objPos.gravity.Reset(6)
 	}
 
 	if g.hit() {
