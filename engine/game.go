@@ -3,8 +3,6 @@ package engine
 import (
 	"JungleRun/resources"
 	"image"
-	"image/color"
-	"math"
 	"math/rand"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -145,7 +143,7 @@ func (g *Game) Update() error {
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
-	screen.Fill(color.RGBA{0x80, 0xa0, 0xc0, 0xff})
+	g.content.DrawBackgroundColor(screen)
 	g.drawTiles(screen)
 
 	if g.mode != ModeTitle {
@@ -273,12 +271,5 @@ func (g *Game) drawTiles(screen *ebiten.Image) {
 }
 
 func (g *Game) drawPlayer(screen *ebiten.Image) {
-	op := &ebiten.DrawImageOptions{}
-	w, h := resources.PlayerImage.BoundX(), resources.PlayerImage.BoundY()
-	op.GeoM.Translate(-float64(w)/2.0, -float64(h)/2.0)
-	op.GeoM.Rotate(float64(g.vy16) / 96.0 * math.Pi / 6)
-	op.GeoM.Translate(float64(w)/2.0, float64(h)/2.0)
-	op.GeoM.Translate(float64(g.x16/16.0)-float64(g.cameraX), float64(g.y16/16.0)-float64(g.cameraY))
-	op.Filter = ebiten.FilterLinear
-	screen.DrawImage(resources.PlayerImage.Image, op)
+	g.content.DrawObject(screen, resources.PlayerImage, ObjectsPosition{x16: g.x16, y16: g.y16, vy16: g.vy16}, CameraPosition{cameraX: g.cameraX, cameraY: g.cameraY})
 }

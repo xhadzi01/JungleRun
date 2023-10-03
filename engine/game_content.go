@@ -4,6 +4,7 @@ import (
 	"JungleRun/resources"
 	"fmt"
 	"image/color"
+	"math"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/audio"
@@ -11,14 +12,26 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/text"
 )
 
+type ObjectsPosition struct {
+	x16  int
+	y16  int
+	vy16 int
+}
+
+type CameraPosition struct {
+	cameraX int
+	cameraY int
+}
+
 type GameContent struct {
 	screen *Screen
 	mode   Mode
 
-	titleTextFont resources.FontResource
-	textFont      resources.FontResource
-	smallTextFont resources.FontResource
-	textColor     color.Color
+	titleTextFont   resources.FontResource
+	textFont        resources.FontResource
+	smallTextFont   resources.FontResource
+	textColor       color.Color
+	backgroundColor color.RGBA
 
 	// The players's position
 	x16  int
@@ -45,13 +58,40 @@ type GameContent struct {
 func NewGameContent(screen *Screen) (gc *GameContent) {
 
 	gc = &GameContent{
-		screen:        screen,
-		titleTextFont: resources.TitleArcadeFont,
-		textFont:      resources.ArcadeFont,
-		smallTextFont: resources.SmallArcadeFont,
-		textColor:     color.White,
+		screen:          screen,
+		titleTextFont:   resources.TitleArcadeFont,
+		textFont:        resources.ArcadeFont,
+		smallTextFont:   resources.SmallArcadeFont,
+		textColor:       color.White,
+		backgroundColor: color.RGBA{0x80, 0xa0, 0xc0, 0xff},
 	}
 	return
+}
+
+func (gc *GameContent) DrawBackgroundColor(screenImage *ebiten.Image) {
+	if gc == nil {
+		panic("screen reference is invalid")
+	}
+	screenImage.Fill(gc.backgroundColor)
+}
+
+func (gc *GameContent) DrawObject(screenImage *ebiten.Image, objectImage resources.ImageResource, objPos ObjectsPosition, camPos CameraPosition) {
+	if gc == nil {
+		panic("screen reference is invalid")
+	}
+
+	var (
+		imageWidth  int = objectImage.BoundX()
+		imageHeight int = objectImage.BoundY()
+	)
+
+	op := &ebiten.DrawImageOptions{}
+	op.GeoM.Translate(-float64(imageWidth)/2.0, -float64(imageHeight)/2.0)
+	op.GeoM.Rotate(float64(objPos.vy16) / 96.0 * math.Pi / 6)
+	op.GeoM.Translate(float64(imageWidth)/2.0, float64(imageHeight)/2.0)
+	op.GeoM.Translate(float64(objPos.x16/16.0)-float64(camPos.cameraX), float64(objPos.y16/16.0)-float64(camPos.cameraY))
+	op.Filter = ebiten.FilterLinear
+	screenImage.DrawImage(objectImage.Image, op)
 }
 
 func (gc *GameContent) DrawCenterText(screenImage *ebiten.Image, titleText string, additionalText []string) {
