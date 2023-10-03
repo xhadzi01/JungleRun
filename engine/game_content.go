@@ -1,13 +1,23 @@
 package engine
 
 import (
+	"JungleRun/resources"
+	"fmt"
+	"image/color"
+
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/audio"
+	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
+	"github.com/hajimehoshi/ebiten/v2/text"
 )
 
 type GameContent struct {
 	screen *Screen
 	mode   Mode
+
+	textFont      resources.FontResource
+	smallTextFont resources.FontResource
+	textColor     color.Color
 
 	// The players's position
 	x16  int
@@ -31,10 +41,50 @@ type GameContent struct {
 	hitPlayer    *audio.Player
 }
 
-func NewGameContent(screen *Screen) ebiten.Game {
-	g := &Game{
-		screen: screen,
+func NewGameContent(screen *Screen) (gc *GameContent) {
+
+	gc = &GameContent{
+		screen:        screen,
+		textFont:      resources.ArcadeFont,
+		smallTextFont: resources.SmallArcadeFont,
+		textColor:     color.White,
 	}
-	g.init()
-	return g
+	return
+}
+
+func (gc *GameContent) DrawNameAndCopyright(screenImage *ebiten.Image, gameName, copyright string) {
+	if gc == nil {
+		panic("screen reference is invalid")
+	}
+
+	// game name
+	gameNameScreenXOffset := (gc.screen.Width() - len(gameName)*gc.smallTextFont.Size) / 2
+	gameNameScreenYOffset := gc.screen.Height() - 6 - gc.smallTextFont.Size
+	text.Draw(screenImage, gameName, gc.smallTextFont, gameNameScreenXOffset, gameNameScreenYOffset, gc.textColor)
+
+	// game copyright
+	gameCopyrightScreenXOffset := (gc.screen.Width() - len(copyright)*gc.smallTextFont.Size) / 2
+	gameCopyrightScreenYOffset := gc.screen.Height() - 4
+	text.Draw(screenImage, copyright, gc.smallTextFont, gameCopyrightScreenXOffset, gameCopyrightScreenYOffset, gc.textColor)
+}
+
+func (gc *GameContent) DrawScore(screenImage *ebiten.Image, score int) {
+	if gc == nil {
+		panic("screen reference is invalid")
+	}
+
+	scoreStr := fmt.Sprintf("%04d", score)
+	scoreStrLen := len(scoreStr)
+	// upper right corner
+	scoreStrScreenOffset := gc.screen.Width() - scoreStrLen*gc.textFont.Size
+
+	text.Draw(screenImage, scoreStr, gc.textFont, scoreStrScreenOffset, gc.textFont.Size, gc.textColor)
+}
+
+func (gc *GameContent) DrawTPS(screenImage *ebiten.Image) {
+	if gc == nil {
+		panic("screen reference is invalid")
+	}
+
+	ebitenutil.DebugPrint(screenImage, fmt.Sprintf("TPS: %0.2f", ebiten.ActualTPS()))
 }

@@ -2,14 +2,12 @@ package engine
 
 import (
 	"JungleRun/resources"
-	"fmt"
 	"image"
 	"image/color"
 	"math"
 	"math/rand"
 
 	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/hajimehoshi/ebiten/v2/text"
 )
 
@@ -34,6 +32,7 @@ const (
 type Game struct {
 	screen    *Screen
 	controlls GameControlls
+	content   *GameContent
 	mode      Mode
 
 	// The players's position
@@ -55,6 +54,7 @@ func NewGame(screen *Screen) ebiten.Game {
 	g := &Game{
 		screen:    screen,
 		controlls: NewGameControlls(),
+		content:   NewGameContent(screen),
 	}
 	g.init()
 	return g
@@ -170,20 +170,11 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	}
 
 	if g.mode == ModeTitle {
-		msg := []string{
-			"Go Jungle run",
-			"licenced under CC BY 3.0.",
-		}
-		for i, l := range msg {
-			x := (g.screen.Width() - len(l)*resources.SmallArcadeFont.Size) / 2
-			text.Draw(screen, l, resources.SmallArcadeFont, x, g.screen.Height()-4+(i-1)*resources.SmallArcadeFont.Size, color.White)
-		}
+		g.content.DrawNameAndCopyright(screen, "Go Jungle run", "licenced under CC BY 3.0.")
 	}
 
-	scoreStr := fmt.Sprintf("%04d", g.score())
-	text.Draw(screen, scoreStr, resources.ArcadeFont, g.screen.Width()-len(scoreStr)*resources.ArcadeFont.Size, resources.ArcadeFont.Size, color.White)
-
-	ebitenutil.DebugPrint(screen, fmt.Sprintf("TPS: %0.2f", ebiten.ActualTPS()))
+	g.content.DrawScore(screen, g.score())
+	g.content.DrawTPS(screen)
 }
 
 func (g *Game) pipeAt(tileX int) (tileY int, ok bool) {
